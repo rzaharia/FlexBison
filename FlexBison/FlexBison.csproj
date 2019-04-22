@@ -66,10 +66,7 @@
     <Content Include="Grammars\bison.tmLanguage">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="Grammars\C.tmLanguage">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="Grammars\flex.tmLanguage">
+    <Content Include="Grammars\lex.tmLanguage">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <None Include="packages.config" />

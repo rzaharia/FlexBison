@@ -1,0 +1,385 @@
+#################################################################
+## Iro
+################################################################ 
+##
+## * Press Ctrl + '+'/'-' To Zoom in
+## * Press Ctrl + S to save and recalculate... 
+## * Documents are saved to web storage.
+## * Only one save slot supported.
+## * Matches cannot span lines.
+## * Unicode chars must be defined in \u0000 to \uffff format.
+## * All matches must be contained by a single group ( ... )
+## * Look behinds not permitted, (?<= or (?<!
+## * Look forwards are permitted (?= or (?!
+## * Constants are defined as __my_const = (......)
+## * The \= format allows unescaped regular expressions
+## * Constants referenced by match \= $${__my_const}
+## * Constants can reference other constants
+## * You are free to delete all the default scopes.
+## * Twitter : ainslec , Web: http://eeyo.io/iro
+##
+################################################################
+
+name                   = lex
+file_extensions []     = l;
+
+################################################################
+## Constants
+################################################################
+
+__MY_CONSTANT \= (\b[a-z][a-z0-9]*)
+__TOKENS_KEYWORD \= (%token|%left|%nonassoc)
+
+################################################################
+## Styles
+################################################################
+
+styles [] {
+
+.meta_tag : style{
+   color                 = light_blue
+   italic                = true
+   ace_scope             = meta
+   textmate_scope        = meta.tag
+}
+
+.parameter : style{
+   color                 = #31d3fb
+   textmate_scope        = variable.language
+}
+
+.data_type : style{
+   color                 = cyan
+   textmate_scope        = entity.name.type
+}
+
+.constant : style{
+   color                 = light_blue
+   ace_scope             = constant
+   textmate_scope        = string.double
+}
+
+.rules_header_rule : style{
+   color                 = cyan
+   textmate_scope        = support.type
+}
+
+.rules_rule : style{
+   color                 = #31e2dd
+   ace_scope             = constant
+   textmate_scope        = entity.other.attribute-name
+}
+
+.token_bison : style {
+   color                 = #31d3fb
+   ace_scope             = meta
+   textmate_scope        = entity.name.type
+}
+
+.comment : style {
+   color                 = light_green
+   italic                = true
+   ace_scope             = comment
+   textmate_scope        = comment
+   pygments_scope        = Comment
+}
+
+.numeric : style {
+   color                 = gold
+   ace_scope             = constant.numeric
+   textmate_scope        = constant.numeric
+   pygments_scope        = Number
+}
+
+.punctuation : style {
+   color                 = orange
+   ace_scope             = punctuation
+   textmate_scope        = constant.character.escape
+}
+
+.include : style {
+   color                 = orange
+   textmate_scope        = string.quoted.single
+}
+
+.string_double : style {
+   color                 = orange
+   textmate_scope        = string.quoted.double
+}
+
+.regex : style{
+   color                 = #31d3fb
+   textmate_scope        = entity.other.attribute-name
+}
+
+.illegal : style {
+   //color                 = white
+   background_color      = red
+   ace_scope             = invalid
+   textmate_scope        = invalid
+   pygments_scope        = Generic.Error
+}
+
+}
+
+#################################################
+## Parse contexts
+#################################################
+
+contexts [] {
+
+##############################################
+## Main Context - Entry point context
+##############################################
+
+main : context {
+   
+      : inline_push {
+      regex          \= (%%)
+      styles []       = .punctuation;
+      : pop {
+         regex       \= (%%)
+         styles []    = .punctuation;
+      }
+      
+      /*: pattern {
+         //regex       \= (.)
+         styles []    = .constant;
+      }*/
+      
+      : inline_push{
+      regex          \= (\s+{)
+      styles []       = .meta_tag;
+      //default_style   = .regex
+      : pop {
+         regex       \= (})
+         styles []    = .meta_tag;
+      }
+      
+      : include "cContext_rules";
+      }
+      
+      : inline_push{
+      regex          \= ({)
+      styles []       = .meta_tag;
+      //default_style   = .comment
+      : pop {
+         regex       \= (})
+         styles []    = .meta_tag;
+      }
+      : pattern {
+         regex       \= (.)
+         styles []    = .regex;
+      }
+      }
+      
+      : include "main";
+      
+   }
+   
+   : include "numeric" ;
+   
+   : include "rules_context";
+   
+   : inline_push {
+      regex          \= (\")
+      styles []       = .punctuation;
+      : pop {
+         regex       \= (\")
+         styles []    = .punctuation;
+      }
+      : pattern {
+         regex       \= (.)
+         styles []    = .constant;
+      }
+   }
+   
+   : include "multi_line_comment";
+   : include "cContext";
+   
+   : pattern {
+      regex          \= (//.*)
+      styles []       = .comment;
+   }
+   
+   : include "bison_tokens";
+   
+   : pattern {
+      regex          \= (})
+      styles []       = .illegal;
+   }
+   
+}
+
+#################################################
+## End of Contexts
+#################################################
+
+
+
+###########################################
+## Rules context
+###########################################
+
+rules_context : context{
+   : inline_push{
+      regex          \= ([\w_-]+)
+      styles []       = .meta_tag;
+      //default_style   = .meta_tag
+      : eol_pop {}
+   : pattern {
+      regex          \= ([^\s]+)
+      styles []       = .regex;
+   }
+   }
+}
+
+
+###########################################
+## Bison tokens context
+###########################################
+
+bison_tokens : context{
+   : inline_push{
+      regex          \= $${__TOKENS_KEYWORD}
+      styles []       = .meta_tag;
+      default_style   = .meta_tag
+      : pop {
+         regex       \= (\w+|<\w+>\s+\w+)
+         styles []    = .token_bison;
+         }
+   }
+   
+   : inline_push{
+      regex          \= (^(\s*)?%[\w-_\d]+(\s*)?{)
+      styles []       = .meta_tag;
+      : pop {
+         regex       \= (})
+         styles []    = .meta_tag;
+         }
+         
+      : include "cContext";
+   }
+   
+   : pattern {
+      regex          \= (^(\s*)?%[\w-_\d]+)
+      styles []       = .meta_tag;
+   }
+   
+}
+
+
+###########################################
+## C Context
+###########################################
+
+cContext_rules : context{
+   : pattern {
+      regex          \= (//.*)
+      styles []       = .comment;
+   }
+   : pattern {
+      regex          \= (\".*\")
+      styles []       = .string_double;
+   }
+   : include "multi_line_comment" ;
+   : pattern {
+      regex          \= ([\w\d_|(\[\w\d_\])]+?;)
+      styles []       = .data_type;
+   }
+   : pattern {
+      regex          \= (\w+?,)
+      styles []       = .data_type;
+   }
+   : pattern {
+      regex          \= ((\s*)?[\w_\d]+?\s)
+      styles []       = .parameter;
+   }
+   : pattern {
+      regex          \= ((\s*)?#define.*)
+      styles []       = .parameter;
+   }
+   
+   : inline_push{
+      regex          \= (#include\s+<)
+      styles []       = .meta_tag;
+      default_style   = .include
+      : pop {
+         regex       \= (>)
+         styles []    = .meta_tag;
+         }
+   }
+   : inline_push{
+      regex          \= (#include\s+\")
+      styles []       = .meta_tag;
+      default_style   = .include
+      : pop {
+         regex       \= (\")
+         styles []    = .meta_tag;
+         }
+   }
+}
+
+cContext : context{
+   : inline_push{
+      regex          \= (%{)
+      styles []       = .meta_tag;
+      //default_style   = .comment
+      : pop {
+         regex       \= (%})
+         styles []    = .meta_tag;
+         }
+      :include "cContext_rules";
+   }
+   : inline_push{
+      regex          \= ({)
+      styles []       = .meta_tag;
+      //default_style   = .comment
+      : pop {
+         regex       \= (})
+         styles []    = .meta_tag;
+         }
+      :include "cContext_rules";
+   }
+   : inline_push{
+      regex          \= (%union{)
+      styles []       = .meta_tag;
+      //default_style   = .comment
+      : pop {
+         regex       \= (})
+         styles []    = .meta_tag;
+         }
+      :include "cContext_rules";
+   }
+}
+
+###########################################
+## Numeric Context
+###########################################
+
+numeric : context {
+   : pattern {
+      regex          \= (\b\d+)
+      styles []       = .numeric;
+   }
+}
+
+###########################################
+## Multi Line Comment Context
+###########################################
+
+multi_line_comment : context {
+   description        = multiline
+   : inline_push {
+      regex          \= (/\*)
+      styles []       = .comment;
+      default_style   = .comment
+      : pop {
+         regex       \= (\*/)
+         styles []    = .comment;
+      }
+      
+   }
+}
+   
+}
