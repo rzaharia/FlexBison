@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="FlexBison.42565bb9-28ac-422a-bce3-9298141a210f" Version="1.0.0.0" Language="en-US" Publisher="Raul Zaharia" />
+        <Identity Id="FlexBison.42565bb9-28ac-422a-bce3-9298141a210f" Version="1.0.0.1" Language="en-US" Publisher="Raul Zaharia" />
         <DisplayName>FlexBison</DisplayName>
         <Description xml:space="preserve">Flex Bison extension for VisualStudio. Now it just uses a color themes for flex-bison files.</Description>
         <License>LICENSE.txt</License>
